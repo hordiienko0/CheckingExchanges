@@ -1,8 +1,7 @@
-﻿using CheckingExchanges.Interfaces;
+﻿using Domain.Interfaces;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
 
-namespace CheckingExchanges.External;
+namespace Infrastructure.External;
 
 public class BinanceApiClient : IExchangeApiClient
 {
@@ -17,8 +16,7 @@ public class BinanceApiClient : IExchangeApiClient
     {
         var client = _httpClientFactory.CreateClient();
         client.BaseAddress = new Uri("https://api.binance.com");
-        //var response = await client.GetStringAsync($"/api/v3/depth?symbol={baseCurrency}{quoteCurrency}&limit=1");
-        var response = await client.GetAsync($"/api/v3/depth?symbol={baseCurrency}{quoteCurrency}&limit=1");
+        var response = await client.GetAsync($"/api/v3/ticker/price?symbol={baseCurrency.ToUpper()}{quoteCurrency.ToUpper()}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
@@ -26,6 +24,6 @@ public class BinanceApiClient : IExchangeApiClient
             var json = JObject.Parse(content);
             return json["price"].Value<decimal>();
         }
-        return 0;        
+        throw new Exception("Failed to retrieve rate from Binance API");
     }
 }

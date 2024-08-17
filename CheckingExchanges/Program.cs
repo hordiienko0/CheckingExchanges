@@ -1,6 +1,8 @@
-
-using CheckingExchanges.External;
-using CheckingExchanges.Interfaces;
+using Application.Interfaces;
+using Application.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Infrastructure;
 
 namespace CheckingExchanges
 {
@@ -20,9 +22,11 @@ namespace CheckingExchanges
             builder.Services.AddHttpClient();
 
             // Register exchange clients
-            builder.Services.AddSingleton<IExchangeApiClient, BinanceApiClient>();
-            builder.Services.AddSingleton<IExchangeApiClient, KuCoinApiClient>();
+            builder.Services.AddScoped<IExchangeService, ExchangeService>();
+            builder.Services.AddApplicationServices();
 
+            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+            builder.Services.AddFluentValidationAutoValidation();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

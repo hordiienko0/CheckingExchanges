@@ -1,4 +1,7 @@
-﻿using CheckingExchanges.Interfaces;
+﻿using Application.Interfaces;
+using CheckingExchanges.Models;
+using Domain.Interfaces;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CheckingExchanges.Controllers
@@ -7,46 +10,38 @@ namespace CheckingExchanges.Controllers
     [Route("[controller]")]
     public class ExchangeController : ControllerBase
     {
-        private readonly IEnumerable<IExchangeApiClient> _exchangeClients;
+        private readonly IExchangeService _exchangeService;
 
-        public ExchangeController(IEnumerable<IExchangeApiClient> exchangeClients)
+
+        public ExchangeController(IExchangeService exchangeService)
         {
-            _exchangeClients = exchangeClients;
+            _exchangeService = exchangeService;
         }
 
         [HttpGet("estimate")]
-        public async Task<IActionResult> Estimate(decimal inputAmount, string inputCurrency, string outputCurrency)
+        public async Task<IActionResult> Estimate([FromQuery] EstimateRequest request)
         {
-            var bestExchange = "";
-            var bestOutputAmount = 0m;
+            //var validationResult = await _estimateValidator.ValidateAsync(request);
+            //if (!validationResult.IsValid)
+            //{
+            //    return BadRequest(validationResult.Errors);
+            //}
 
-            foreach (var client in _exchangeClients)
-            {
-                var rate = await client.GetRateAsync(inputCurrency, outputCurrency);
-                var outputAmount = inputAmount * rate;
-
-                if (outputAmount > bestOutputAmount)
-                {
-                    bestOutputAmount = outputAmount;
-                    bestExchange = client.GetType().Name.Replace("ApiClient", "");
-                }
-            }
-
-            return Ok(new { exchangeName = bestExchange, outputAmount = bestOutputAmount });
+            var result = await _exchangeService.GetBestRateAsync(request.InputAmount, request.InputCurrency, request.OutputCurrency);
+            return Ok(result);
         }
 
         [HttpGet("getRates")]
-        public async Task<IActionResult> GetRates(string baseCurrency, string quoteCurrency)
+        public async Task<IActionResult> GetRates([FromQuery] GetRatesRequest request)
         {
-            var rates = new List<object>();
+            //var validationResult = await _getRatesValidator.ValidateAsync(request);
+            //if (!validationResult.IsValid)
+            //{
+            //    return BadRequest(validationResult.Errors);
+            //}
 
-            foreach (var client in _exchangeClients)
-            {
-                var rate = await client.GetRateAsync(baseCurrency, quoteCurrency);
-                rates.Add(new { exchangeName = client.GetType().Name.Replace("ApiClient", ""), rate });
-            }
-
-            return Ok(rates);
+            var result = await _exchangeService.GetRatesAsync(request.BaseCurrency, request.QuoteCurrency);
+            return Ok(result);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace CheckingExchanges.Interfaces;
+﻿namespace Domain.Interfaces;
 
 public interface IExchangeApiClient
 {
