@@ -1,8 +1,7 @@
-﻿namespace CheckingExchanges.Models
+﻿namespace CheckingExchanges.Models;
+
+public class GetRatesRequest
 {
-    public class GetRatesRequest
-    {
-        public string BaseCurrency { get; set; }
-        public string QuoteCurrency { get; set; }
-    }
+    public string BaseCurrency { get; set; }
+    public string QuoteCurrency { get; set; }
 }

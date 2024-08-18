@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace Domain.Entities;
+﻿namespace Domain.Entities;
 
 public class Result<T>
 {

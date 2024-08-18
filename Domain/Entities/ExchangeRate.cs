@@ -2,6 +2,6 @@
 
 public class ExchangeRate
 {
-    public string ExchangeName { get; set; } = string.Empty;
+    public string ExchangeName { get; set; }
     public decimal Rate { get; set; }
 }
