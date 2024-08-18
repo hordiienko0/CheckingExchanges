@@ -4,45 +4,36 @@ using Domain.Interfaces;
 
 namespace Application.Services;
 
+
 public class ExchangeService : IExchangeService
 {
-    private readonly IEnumerable<IExchangeApiClient> _exchangeClients;
+    private readonly IEnumerable<IExchangeApiClient> _exchangeApiClients;
 
-    public ExchangeService(IEnumerable<IExchangeApiClient> exchangeClients)
+    public ExchangeService(IEnumerable<IExchangeApiClient> exchangeApiClients)
     {
-        _exchangeClients = exchangeClients;
+        _exchangeApiClients = exchangeApiClients;
     }
 
     public async Task<ExchangeRate> GetBestRateAsync(decimal inputAmount, string inputCurrency, string outputCurrency)
     {
-        var bestExchange = "";
-        var bestOutputAmount = 0m;
-
-        foreach (var client in _exchangeClients)
+        var tasks = _exchangeApiClients.Select(async client =>
         {
             var rate = await client.GetRateAsync(inputCurrency, outputCurrency);
-            var outputAmount = inputAmount * rate;
+            return new ExchangeRate { ExchangeName = client.ExchangeName, Rate = rate };
+        });
 
-            if (outputAmount > bestOutputAmount)
-            {
-                bestOutputAmount = outputAmount;
-                bestExchange = client.GetType().Name.Replace("ApiClient", "");
-            }
-        }
-
-        return new ExchangeRate { ExchangeName = bestExchange, Rate = bestOutputAmount };
+        var rates = await Task.WhenAll(tasks);
+        return rates.OrderByDescending(r => r.Rate).FirstOrDefault();
     }
 
     public async Task<IEnumerable<ExchangeRate>> GetRatesAsync(string baseCurrency, string quoteCurrency)
     {
-        var rates = new List<ExchangeRate>();
-
-        foreach (var client in _exchangeClients)
+        var tasks = _exchangeApiClients.Select(async client =>
         {
             var rate = await client.GetRateAsync(baseCurrency, quoteCurrency);
-            rates.Add(new ExchangeRate { ExchangeName = client.GetType().Name.Replace("ApiClient", ""), Rate = rate });
-        }
+            return new ExchangeRate { ExchangeName = client.ExchangeName, Rate = rate };
+        });
 
-        return rates;
+        return await Task.WhenAll(tasks);
     }
 }

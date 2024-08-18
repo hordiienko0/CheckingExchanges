@@ -6,6 +6,7 @@ namespace Infrastructure.External;
 public class BinanceApiClient : IExchangeApiClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    public string ExchangeName => "Binance";
 
     public BinanceApiClient(IHttpClientFactory httpClientFactory)
     {
@@ -24,6 +25,7 @@ public class BinanceApiClient : IExchangeApiClient
             var json = JObject.Parse(content);
             return json["price"].Value<decimal>();
         }
+
         throw new Exception("Failed to retrieve rate from Binance API");
     }
 }
