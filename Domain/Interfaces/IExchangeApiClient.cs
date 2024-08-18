@@ -1,7 +1,9 @@
-﻿namespace Domain.Interfaces;
+﻿using Domain.Entities;
+
+namespace Domain.Interfaces;
 
 public interface IExchangeApiClient
 {
     string ExchangeName { get; }
-    Task<decimal> GetRateAsync(string baseCurrency, string quoteCurrency);
+    Task<Result<List<ExchangeRate>>> GetRateAsync(string baseCurrency, string quoteCurrency);
 }

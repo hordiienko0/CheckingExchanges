@@ -21,7 +21,7 @@ namespace CheckingExchanges.Controllers
         [HttpGet("estimate")]
         public async Task<IActionResult> Estimate([FromQuery] EstimateRequest request)
         {
-            var result = await _exchangeService.GetBestRateAsync(request.InputAmount, request.InputCurrency, request.OutputCurrency);
+            var result = await _exchangeService.EstimateExchangeAsync(request.InputAmount, request.InputCurrency, request.OutputCurrency);
             return Ok(result);
         }
 

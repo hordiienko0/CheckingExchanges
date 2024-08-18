@@ -4,7 +4,6 @@ using Domain.Interfaces;
 
 namespace Application.Services;
 
-
 public class ExchangeService : IExchangeService
 {
     private readonly IEnumerable<IExchangeApiClient> _exchangeApiClients;
@@ -14,15 +13,23 @@ public class ExchangeService : IExchangeService
         _exchangeApiClients = exchangeApiClients;
     }
 
-    public async Task<ExchangeRate> GetBestRateAsync(decimal inputAmount, string inputCurrency, string outputCurrency)
+    public async Task<ExchangeRate> EstimateExchangeAsync(decimal inputAmount, string inputCurrency, string outputCurrency)
     {
         var tasks = _exchangeApiClients.Select(async client =>
         {
-            var rate = await client.GetRateAsync(inputCurrency, outputCurrency);
-            return new ExchangeRate { ExchangeName = client.ExchangeName, Rate = rate };
+            var rateResult = await client.GetRateAsync(inputCurrency, outputCurrency);
+            if (rateResult.IsSuccess)
+            {
+                return new ExchangeRate
+                {
+                    ExchangeName = client.ExchangeName,
+                    Rate = rateResult.Value.First().Rate * inputAmount
+                };
+            }
+            return null;
         });
 
-        var rates = await Task.WhenAll(tasks);
+        var rates = (await Task.WhenAll(tasks)).Where(r => r != null).ToList();
         return rates.OrderByDescending(r => r.Rate).FirstOrDefault();
     }
 
@@ -30,10 +37,19 @@ public class ExchangeService : IExchangeService
     {
         var tasks = _exchangeApiClients.Select(async client =>
         {
-            var rate = await client.GetRateAsync(baseCurrency, quoteCurrency);
-            return new ExchangeRate { ExchangeName = client.ExchangeName, Rate = rate };
+            var rateResult = await client.GetRateAsync(baseCurrency, quoteCurrency);
+            if (rateResult.IsSuccess)
+            {
+                return rateResult.Value.Select(rate => new ExchangeRate
+                {
+                    ExchangeName = client.ExchangeName,
+                    Rate = rate.Rate
+                });
+            }
+            return Enumerable.Empty<ExchangeRate>();
         });
 
-        return await Task.WhenAll(tasks);
+        var rates = await Task.WhenAll(tasks);
+        return rates.SelectMany(r => r);
     }
 }
