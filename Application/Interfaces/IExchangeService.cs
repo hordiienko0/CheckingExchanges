@@ -3,6 +3,6 @@
 namespace Application.Interfaces;
 public interface IExchangeService
 {
-    Task<ExchangeRate> EstimateExchangeAsync(decimal inputAmount, string inputCurrency, string outputCurrency);
-    Task<IEnumerable<ExchangeRate>> GetRatesAsync(string baseCurrency, string quoteCurrency);
+    Task<Result<ExchangeRate>> EstimateExchangeAsync(decimal inputAmount, string inputCurrency, string outputCurrency);
+    Task<Result<IEnumerable<ExchangeRate>>> GetRatesAsync(string baseCurrency, string quoteCurrency);
 }

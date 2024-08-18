@@ -13,7 +13,7 @@ public class ExchangeService : IExchangeService
         _exchangeApiClients = exchangeApiClients;
     }
 
-    public async Task<ExchangeRate> EstimateExchangeAsync(decimal inputAmount, string inputCurrency, string outputCurrency)
+    public async Task<Result<ExchangeRate>> EstimateExchangeAsync(decimal inputAmount, string inputCurrency, string outputCurrency)
     {
         var tasks = _exchangeApiClients.Select(async client =>
         {
@@ -30,10 +30,15 @@ public class ExchangeService : IExchangeService
         });
 
         var rates = (await Task.WhenAll(tasks)).Where(r => r != null).ToList();
-        return rates.OrderByDescending(r => r.Rate).FirstOrDefault();
+        if (rates.Any())
+        {
+            var bestRate = rates.OrderByDescending(r => r.Rate).FirstOrDefault();
+            return Result<ExchangeRate>.Success(bestRate);
+        }
+        return Result<ExchangeRate>.Failure("No valid exchange rates found.");
     }
 
-    public async Task<IEnumerable<ExchangeRate>> GetRatesAsync(string baseCurrency, string quoteCurrency)
+    public async Task<Result<IEnumerable<ExchangeRate>>> GetRatesAsync(string baseCurrency, string quoteCurrency)
     {
         var tasks = _exchangeApiClients.Select(async client =>
         {
@@ -50,6 +55,12 @@ public class ExchangeService : IExchangeService
         });
 
         var rates = await Task.WhenAll(tasks);
-        return rates.SelectMany(r => r);
+        var allRates = rates.SelectMany(r => r);
+
+        if (allRates.Any())
+        {
+            return Result<IEnumerable<ExchangeRate>>.Success(allRates);
+        }
+        return Result<IEnumerable<ExchangeRate>>.Failure("No valid exchange rates found.");
     }
 }

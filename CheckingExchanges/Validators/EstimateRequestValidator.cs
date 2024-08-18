@@ -7,9 +7,14 @@ namespace CheckingExchanges.Validators
     {
         public EstimateRequestValidator()
         {
-            RuleFor(x => x.InputAmount).GreaterThan(0).WithMessage("Input amount must be greater than zero.");
-            RuleFor(x => x.InputCurrency).NotEmpty().WithMessage("Input currency is required.");
-            RuleFor(x => x.OutputCurrency).NotEmpty().WithMessage("Output currency is required.");
+            RuleFor(x => x.InputAmount)
+            .GreaterThanOrEqualTo(0).WithMessage("Input amount must be greater than or equal to zero.");
+
+            RuleFor(x => x.InputCurrency)
+                .NotEmpty().WithMessage("Input currency is required.");
+
+            RuleFor(x => x.OutputCurrency)
+                .NotEmpty().WithMessage("Output currency is required.");
         }
     }
 }

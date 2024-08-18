@@ -20,33 +20,35 @@ namespace Infrastructure.External
             var client = _httpClientFactory.CreateClient();
             client.BaseAddress = new Uri("https://api.kucoin.com");
 
-            var sellRate = await FetchAverageRateAsync(client, baseCurrency, quoteCurrency);
-            if (sellRate.IsSuccess)
+            // Fetch sell rate
+            var sellRateResult = await FetchAverageRateAsync(client, baseCurrency, quoteCurrency);
+            if (sellRateResult.IsSuccess)
             {
                 return Result<List<ExchangeRate>>.Success(new List<ExchangeRate>
                 {
                     new ExchangeRate
                     {
                         ExchangeName = ExchangeName,
-                        Rate = sellRate.Value.Rate
+                        Rate = sellRateResult.Value.Rate
                     }
                 });
             }
 
-            var buyRate = await FetchAverageRateAsync(client, quoteCurrency, baseCurrency);
-            if (buyRate.IsSuccess)
+            // Fetch buy rate
+            var buyRateResult = await FetchAverageRateAsync(client, quoteCurrency, baseCurrency);
+            if (buyRateResult.IsSuccess)
             {
                 return Result<List<ExchangeRate>>.Success(new List<ExchangeRate>
                 {
                     new ExchangeRate
                     {
                         ExchangeName = ExchangeName,
-                        Rate = Decimal.One / buyRate.Value.Rate
+                        Rate = Decimal.One / buyRateResult.Value.Rate
                     }
                 });
             }
 
-            return Result<List<ExchangeRate>>.Failure("Failed to retrieve exchange rate.");
+            return Result<List<ExchangeRate>>.Failure($"Failed to retrieve exchange rate from {ExchangeName}-apiClient.");
         }
 
         private async Task<Result<ExchangeRate>> FetchAverageRateAsync(HttpClient client, string baseCurrency, string quoteCurrency)
@@ -55,10 +57,11 @@ namespace Infrastructure.External
             if (response.IsSuccessStatusCode)
             {
                 var orderBook = JObject.Parse(await response.Content.ReadAsStringAsync());
-                var lastTenAsksReverse = orderBook["data"]?["asks"]?.TakeLast(10).Select(a => a[0]?.Value<decimal>() ?? 0).ToList();
-                if (lastTenAsksReverse.Count != 0)
+                var asks = orderBook["data"]?["asks"]?.TakeLast(10).Select(a => a[0]?.Value<decimal>() ?? 0).ToList();
+
+                if (asks != null && asks.Any())
                 {
-                    var averageRate = lastTenAsksReverse.Average();
+                    var averageRate = asks.Average();
                     return Result<ExchangeRate>.Success(new ExchangeRate
                     {
                         ExchangeName = ExchangeName,
@@ -66,7 +69,7 @@ namespace Infrastructure.External
                     });
                 }
             }
-            return Result<ExchangeRate>.Failure("Failed to fetch average rate.");
+            return Result<ExchangeRate>.Failure($"Failed to fetch average rate from {ExchangeName}-apiClient.");
         }
     }
 }

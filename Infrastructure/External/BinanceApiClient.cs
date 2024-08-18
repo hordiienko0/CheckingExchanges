@@ -1,7 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
 
 namespace Infrastructure.External
 {
@@ -20,28 +19,30 @@ namespace Infrastructure.External
             var client = _httpClientFactory.CreateClient();
             client.BaseAddress = new Uri("https://api.binance.com");
 
-            var sellRate = await FetchAverageRateAsync(client, baseCurrency, quoteCurrency);
-            if (sellRate.IsSuccess)
+            // Fetch sell rate
+            var sellRateResult = await FetchAverageRateAsync(client, baseCurrency, quoteCurrency);
+            if (sellRateResult.IsSuccess)
             {
                 return Result<List<ExchangeRate>>.Success(new List<ExchangeRate>
                 {
                     new ExchangeRate
                     {
                         ExchangeName = ExchangeName,
-                        Rate = sellRate.Value.Rate
+                        Rate = sellRateResult.Value.Rate
                     }
                 });
             }
 
-            var buyRate = await FetchAverageRateAsync(client, quoteCurrency, baseCurrency);
-            if (buyRate.IsSuccess)
+            // Fetch buy rate
+            var buyRateResult = await FetchAverageRateAsync(client, quoteCurrency, baseCurrency);
+            if (buyRateResult.IsSuccess)
             {
                 return Result<List<ExchangeRate>>.Success(new List<ExchangeRate>
                 {
                     new ExchangeRate
                     {
                         ExchangeName = ExchangeName,
-                        Rate = Decimal.One / buyRate.Value.Rate
+                        Rate = Decimal.One / buyRateResult.Value.Rate
                     }
                 });
             }
@@ -55,19 +56,16 @@ namespace Infrastructure.External
             if (response.IsSuccessStatusCode)
             {
                 var orderBook = JObject.Parse(await response.Content.ReadAsStringAsync());
-                if (orderBook["asks"] != null)
-                {
-                    var lastTenAsks = orderBook["asks"]?.TakeLast(10).Select(a => a[0]?.Value<decimal>() ?? 0).ToList();
+                var asks = orderBook["asks"]?.TakeLast(10).Select(a => a[0]?.Value<decimal>() ?? 0).ToList();
 
-                    if (lastTenAsks != null)
+                if (asks != null && asks.Any())
+                {
+                    var averageRate = asks.Average();
+                    return Result<ExchangeRate>.Success(new ExchangeRate
                     {
-                        var averageRate = lastTenAsks.Average();
-                        return Result<ExchangeRate>.Success(new ExchangeRate
-                        {
-                            ExchangeName = ExchangeName,
-                            Rate = averageRate
-                        });
-                    }
+                        ExchangeName = ExchangeName,
+                        Rate = averageRate
+                    });
                 }
             }
             return Result<ExchangeRate>.Failure("Failed to fetch average rate.");
