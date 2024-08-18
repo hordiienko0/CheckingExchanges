@@ -53,7 +53,7 @@ namespace Infrastructure.External
 
         private async Task<Result<ExchangeRate>> FetchAverageRateAsync(HttpClient client, string baseCurrency, string quoteCurrency)
         {
-            var response = await client.GetAsync($"/api/v1/market/orderbook/level2?symbol={baseCurrency.ToUpper()}-{quoteCurrency.ToUpper()}");
+            var response = await client.GetAsync($"/api/v1/market/orderbook/level2_20?symbol={baseCurrency.ToUpper()}-{quoteCurrency.ToUpper()}");
             if (response.IsSuccessStatusCode)
             {
                 var orderBook = JObject.Parse(await response.Content.ReadAsStringAsync());

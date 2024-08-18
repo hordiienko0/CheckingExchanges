@@ -1,7 +1,5 @@
 ﻿using Application.Interfaces;
 using CheckingExchanges.Models;
-using Domain.Interfaces;
-using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CheckingExchanges.Controllers
